@@ -1,0 +1,9 @@
+[package]
+name = "wgtool"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+clap = { version = "4.1.8", features = ["derive"] }
+ipnet = "2"
+wglib = { path = "../wglib" }
