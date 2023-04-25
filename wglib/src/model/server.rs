@@ -5,7 +5,7 @@ use anyhow::anyhow;
 use ipnet::Ipv4Net;
 use serde::{Deserialize, Serialize};
 
-use std::collections::HashMap;
+use std::{collections::HashMap, path::Path};
 pub struct Server {
     pub subnet: Ipv4Net,
     pub endpoint: String,
@@ -56,13 +56,13 @@ impl Server {
         }
     }
 
-    pub fn from_config(config_path: &str) -> anyhow::Result<Self> {
+    pub fn load_from_file(config_path: &Path) -> anyhow::Result<Self> {
         let file = std::fs::File::open(config_path)?;
         let config = serde_json::from_reader(file)?;
         Self::from_server_config(config)
     }
 
-    pub fn dump_config(&self, config_path: &str) -> anyhow::Result<()> {
+    pub fn dump_to_file(&self, config_path: &Path) -> anyhow::Result<()> {
         let config = ServerConfig {
             subnet_cidr: self.subnet.to_string(),
             endpoint: self.endpoint.clone(),
