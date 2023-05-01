@@ -95,15 +95,14 @@ impl Server {
         config.push_str(&format!("PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -t nat -D POSTROUTING -o {} -j MASQUERADE\n", self.network_interface));
         config.push_str(&format!("ListenPort = {}\n", self.port));
         config.push_str(&format!("PrivateKey = {}\n", self.keys.private));
-        config.push('\n');
         for client in self.clients.values() {
+            config.push('\n');
             config.push_str("[Peer]\n");
             config.push_str(&format!("PublicKey = {}\n", client.keys.public));
             config.push_str(&format!(
                 "AllowedIPs = {}/32\n",
                 client.get_ip_address(&self.subnet),
             ));
-            config.push('\n');
         }
         config
     }

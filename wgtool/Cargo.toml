@@ -5,8 +5,9 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1"
-clap = { version = "4.1.8", features = ["derive"] }
+clap = { version = "4.1", features = ["derive"] }
 dirs = "5"
 ipnet = "2"
 pnet = "0.33"
+sudo = "0.6"
 wglib = { path = "../wglib" }
