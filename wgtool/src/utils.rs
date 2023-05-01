@@ -1,21 +1,10 @@
 use std::path::PathBuf;
 
 use anyhow::anyhow;
-use pnet::datalink::NetworkInterface;
 use wglib::{Client, Server};
 
 const CONFIG_FILENAME: &str = ".wg";
 const WG_CONFIG_PATH_ENV: &str = "WG_CONFIG_PATH";
-
-pub fn get_default_interface() -> Option<NetworkInterface> {
-    pnet::datalink::interfaces().into_iter().find(|e| {
-        if !e.is_up() || e.is_loopback() || e.mac.is_none() {
-            return false;
-        }
-
-        e.ips.iter().any(|i| i.is_ipv4())
-    })
-}
 
 pub fn get_config_path() -> anyhow::Result<PathBuf> {
     if let Ok(path) = std::env::var(WG_CONFIG_PATH_ENV) {
