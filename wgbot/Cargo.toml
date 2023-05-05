@@ -1,13 +1,11 @@
 [package]
-name = "wgtool"
+name = "wgbot"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
 anyhow = "1"
 clap = { version = "4", features = ["derive"] }
-dirs = "5"
-ipnet = "2"
-pnet = "0.33"
-sudo = "0.6"
+teloxide = { version = "0.12", features = ["macros"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 wglib = { path = "../wglib" }

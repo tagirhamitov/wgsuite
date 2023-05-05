@@ -1,13 +1,14 @@
-use std::io::Write;
-
 use anyhow::anyhow;
-use wglib::Server;
+use wglib::{
+    actions::{dump_wg_config, restart_wg, start_wg, stop_wg},
+    Server,
+};
 
 use crate::{
     defaults::{
         prepare_device, prepare_endpoint, prepare_network_interface, prepare_port, prepare_subnet,
     },
-    utils::{dump_server, get_config_path_with_sudo, load_server, print_client, run_wg_quick},
+    utils::{dump_server, get_config_path_with_sudo, load_server, print_client},
 };
 
 pub fn init(
@@ -76,40 +77,27 @@ pub fn list_clients(name: Option<String>) -> anyhow::Result<()> {
 
 pub fn start(device: Option<String>) -> anyhow::Result<()> {
     let device = prepare_device(device);
-
     let config_path = get_config_path_with_sudo()?;
+
     let server = Server::load_from_file(&config_path)?;
-    let wg_conf = server.get_wg_config();
+    dump_wg_config(&server, &device)?;
 
-    let wg_conf_path: std::path::PathBuf = format!("/etc/wireguard/{}.conf", device).into();
-    std::fs::create_dir_all(wg_conf_path.parent().unwrap())?;
-    let mut file = std::fs::File::create(&wg_conf_path)?;
-    file.write_all(wg_conf.as_bytes())?;
-
-    run_wg_quick("up", &device)
+    start_wg(&device)
 }
 
 pub fn stop(device: Option<String>) -> anyhow::Result<()> {
     let device = prepare_device(device);
-
     sudo::escalate_if_needed().map_err(|err| anyhow!("{err}"))?;
 
-    run_wg_quick("down", &device)
+    stop_wg(&device)
 }
 
 pub fn restart(device: Option<String>) -> anyhow::Result<()> {
     let device = prepare_device(device);
-
     let config_path = get_config_path_with_sudo()?;
-    run_wg_quick("down", &device)?;
 
     let server = Server::load_from_file(&config_path)?;
-    let wg_conf = server.get_wg_config();
+    dump_wg_config(&server, &device)?;
 
-    let wg_conf_path: std::path::PathBuf = format!("/etc/wireguard/{}.conf", device).into();
-    std::fs::create_dir_all(wg_conf_path.parent().unwrap())?;
-    let mut file = std::fs::File::create(&wg_conf_path)?;
-    file.write_all(wg_conf.as_bytes())?;
-
-    run_wg_quick("up", &device)
+    restart_wg(&device)
 }

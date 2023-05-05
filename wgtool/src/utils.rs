@@ -41,16 +41,3 @@ pub fn get_config_path_with_sudo() -> anyhow::Result<PathBuf> {
     sudo::with_env(&[WG_CONFIG_PATH_ENV]).map_err(|err| anyhow!("{}", err))?;
     Ok(config_path)
 }
-
-pub fn run_wg_quick(cmd: &str, device: &str) -> anyhow::Result<()> {
-    let status = std::process::Command::new("wg-quick")
-        .arg(cmd)
-        .arg(device)
-        .status()?;
-
-    if status.success() {
-        Ok(())
-    } else {
-        Err(anyhow!("wg-quick failed with exit code: {}", status))
-    }
-}
