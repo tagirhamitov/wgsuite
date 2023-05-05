@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 anyhow = "1"
 clap = { version = "4", features = ["derive"] }
+sudo = "0.6"
 teloxide = { version = "0.12", features = ["macros"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 wglib = { path = "../wglib" }

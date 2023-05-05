@@ -29,7 +29,8 @@ enum Command {
 }
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    sudo::escalate_if_needed()?;
     let cli = Cli::parse();
     let bot = Bot::new(&cli.token);
     Command::repl(bot, |bot: Bot, msg: Message, cmd: Command| async move {
@@ -46,4 +47,5 @@ async fn main() {
         }
     })
     .await;
+    Ok(())
 }
