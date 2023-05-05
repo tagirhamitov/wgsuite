@@ -1,7 +1,6 @@
 [workspace]
 members = [
     "wgbot",
-    "wghttp",
     "wglib",
     "wgtool",
 ]

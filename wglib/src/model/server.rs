@@ -114,6 +114,15 @@ impl Server {
         }
     }
 
+    pub fn find_client_by_public_key(&self, public_key: &str) -> Option<Client> {
+        for client in self.clients.values() {
+            if client.keys.public == public_key {
+                return Some(client.clone());
+            }
+        }
+        None
+    }
+
     fn find_free_id(&self) -> Option<usize> {
         (0..self.max_number_of_clients()).find(|&id| !self.clients.contains_key(&id))
     }
