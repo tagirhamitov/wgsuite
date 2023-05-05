@@ -1,8 +1,10 @@
 use std::time::UNIX_EPOCH;
 
+use serde::Serialize;
+
 use crate::Server;
 
-#[derive(Debug)]
+#[derive(Serialize)]
 pub struct ClientMetrics {
     pub name: Option<String>,
     pub latest_handshake: u64,

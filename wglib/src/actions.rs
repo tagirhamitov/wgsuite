@@ -1,4 +1,4 @@
-use std::{io::Write, path::PathBuf};
+use std::{io::Write, path::Path};
 
 use anyhow::anyhow;
 use sysctl::Sysctl;
@@ -8,7 +8,7 @@ use crate::{Client, Server};
 #[cfg(target_os = "linux")]
 const CTLNAME: &str = "net.ipv4.ip_forward";
 
-pub fn up(device: &str, config_path: &PathBuf) -> anyhow::Result<()> {
+pub fn up(device: &str, config_path: &Path) -> anyhow::Result<()> {
     let server = Server::load_from_file(config_path)?;
     dump_wg_config(&server, device)?;
     start_wg(device)?;
@@ -19,14 +19,14 @@ pub fn down(device: &str) -> anyhow::Result<()> {
     stop_wg(device)
 }
 
-pub fn reboot(device: &str, config_path: &PathBuf) -> anyhow::Result<()> {
+pub fn reboot(device: &str, config_path: &Path) -> anyhow::Result<()> {
     let server = Server::load_from_file(config_path)?;
     dump_wg_config(&server, device)?;
     restart_wg(device)?;
     Ok(())
 }
 
-pub fn add_client(device: &str, config_path: &PathBuf, name: String) -> anyhow::Result<usize> {
+pub fn add_client(device: &str, config_path: &Path, name: String) -> anyhow::Result<usize> {
     let mut server = Server::load_from_file(config_path)?;
     let id = server.add_client(name)?;
     server.dump_to_file(config_path)?;
@@ -35,7 +35,7 @@ pub fn add_client(device: &str, config_path: &PathBuf, name: String) -> anyhow::
     Ok(id)
 }
 
-pub fn remove_client(device: &str, config_path: &PathBuf, id: usize) -> anyhow::Result<()> {
+pub fn remove_client(device: &str, config_path: &Path, id: usize) -> anyhow::Result<()> {
     let mut server = Server::load_from_file(config_path)?;
     server.remove_client(id)?;
     server.dump_to_file(config_path)?;
@@ -44,13 +44,13 @@ pub fn remove_client(device: &str, config_path: &PathBuf, id: usize) -> anyhow::
     Ok(())
 }
 
-pub fn list_clients(config_path: &PathBuf) -> anyhow::Result<Vec<Client>> {
+pub fn list_clients(config_path: &Path) -> anyhow::Result<Vec<Client>> {
     let server = Server::load_from_file(config_path)?;
     Ok(server.clients.into_values().collect())
 }
 
 pub fn list_clients_filter(
-    config_path: &PathBuf,
+    config_path: &Path,
     predicate: fn(c: &Client) -> bool,
 ) -> anyhow::Result<Vec<Client>> {
     let server = Server::load_from_file(config_path)?;
