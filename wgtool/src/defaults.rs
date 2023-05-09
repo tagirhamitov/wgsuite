@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use anyhow::anyhow;
 use ipnet::Ipv4Net;
 use pnet::datalink::NetworkInterface;
@@ -5,6 +7,7 @@ use pnet::datalink::NetworkInterface;
 const DEFAULT_DEVICE: &str = "wg0";
 const DEFAULT_PORT: u16 = 51820;
 const DEFAULT_SUBNET: &str = "10.0.0.0/24";
+const DEFAULT_CONFIG_FILENAME: &str = ".wg";
 
 pub fn prepare_subnet(subnet: Option<String>) -> anyhow::Result<Ipv4Net> {
     Ok(match subnet {
@@ -64,9 +67,18 @@ pub fn prepare_network_interface(network_interface: Option<String>) -> anyhow::R
 pub fn prepare_device(device: Option<String>) -> String {
     match device {
         Some(device) => device,
+        None => DEFAULT_DEVICE.to_string(),
+    }
+}
+
+pub fn prepare_config_path(config_path: Option<PathBuf>) -> anyhow::Result<PathBuf> {
+    match config_path {
+        Some(path) => Ok(path),
         None => {
-            println!("Using default device: {DEFAULT_DEVICE}");
-            DEFAULT_DEVICE.to_string()
+            let home_path = dirs::home_dir().ok_or_else(|| {
+                anyhow!("Failed to get home path, make sure the $HOME env variable is set")
+            })?;
+            Ok(home_path.join(DEFAULT_CONFIG_FILENAME))
         }
     }
 }

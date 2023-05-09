@@ -2,6 +2,8 @@ mod commands;
 mod defaults;
 mod utils;
 
+use std::path::PathBuf;
+
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
@@ -21,27 +23,43 @@ enum Commands {
         port: Option<u16>,
         #[arg(long)]
         interface: Option<String>,
+        #[arg(short, long)]
+        output: Option<PathBuf>,
     },
     AddClient {
-        #[arg(long)]
         name: String,
+        #[arg(long)]
+        device: Option<String>,
+        #[arg(long)]
+        config_path: Option<PathBuf>,
     },
     RemoveClient {
-        #[arg(long)]
         id: usize,
+        #[arg(long)]
+        device: Option<String>,
+        #[arg(long)]
+        config_path: Option<PathBuf>,
     },
-    ServerConf,
-    ClientConf {
+    ServerConf {
         #[arg(long)]
+        config_path: Option<PathBuf>,
+    },
+    ClientConf {
         id: usize,
+        #[arg(long)]
+        config_path: Option<PathBuf>,
     },
     ListClients {
         #[arg(long)]
         name: Option<String>,
+        #[arg(long)]
+        config_path: Option<PathBuf>,
     },
     Start {
         #[arg(long)]
         device: Option<String>,
+        #[arg(long)]
+        config_path: Option<PathBuf>,
     },
     Stop {
         #[arg(long)]
@@ -50,6 +68,8 @@ enum Commands {
     Restart {
         #[arg(long)]
         device: Option<String>,
+        #[arg(long)]
+        config_path: Option<PathBuf>,
     },
 }
 
@@ -61,15 +81,30 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             endpoint,
             port,
             interface,
-        } => commands::init(subnet, endpoint, port, interface)?,
-        Commands::AddClient { name } => commands::add_client(name)?,
-        Commands::RemoveClient { id } => commands::remove_client(id)?,
-        Commands::ServerConf => commands::server_conf()?,
-        Commands::ClientConf { id } => commands::client_conf(id)?,
-        Commands::ListClients { name } => commands::list_clients(name)?,
-        Commands::Start { device } => commands::start(device)?,
+            output,
+        } => commands::init(subnet, endpoint, port, interface, output)?,
+        Commands::AddClient {
+            name,
+            device,
+            config_path,
+        } => commands::add_client(name, device, config_path)?,
+        Commands::RemoveClient {
+            id,
+            device,
+            config_path,
+        } => commands::remove_client(id, device, config_path)?,
+        Commands::ServerConf { config_path } => commands::server_conf(config_path)?,
+        Commands::ClientConf { id, config_path } => commands::client_conf(id, config_path)?,
+        Commands::ListClients { name, config_path } => commands::list_clients(name, config_path)?,
+        Commands::Start {
+            device,
+            config_path,
+        } => commands::start(device, config_path)?,
         Commands::Stop { device } => commands::stop(device)?,
-        Commands::Restart { device } => commands::restart(device)?,
+        Commands::Restart {
+            device,
+            config_path,
+        } => commands::restart(device, config_path)?,
     };
     Ok(())
 }

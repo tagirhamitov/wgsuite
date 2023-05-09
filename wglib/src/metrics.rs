@@ -2,30 +2,24 @@ use std::time::UNIX_EPOCH;
 
 use serde::Serialize;
 
-use crate::Server;
-
 #[derive(Serialize)]
 pub struct ClientMetrics {
-    pub name: Option<String>,
+    pub public_key: String,
     pub latest_handshake: u64,
     pub received_bytes: u128,
     pub sent_bytes: u128,
 }
 
-pub fn get_metrics(device: &str, server: &Server) -> anyhow::Result<Vec<ClientMetrics>> {
+pub fn get_metrics(device: &str) -> anyhow::Result<Vec<ClientMetrics>> {
     let dump = get_dump_from_wg(device)?;
 
     let mut metrics = Vec::new();
     for line in dump.lines().skip(1) {
         let (public_key, latest_handshake, received_bytes, sent_bytes) = parse_line(line)?;
-
-        let name = server
-            .find_client_by_public_key(public_key)
-            .map(|client| client.name);
         let latest_handshake = get_seconds_from_now(latest_handshake)?;
 
         metrics.push(ClientMetrics {
-            name,
+            public_key: public_key.to_string(),
             latest_handshake,
             received_bytes,
             sent_bytes,

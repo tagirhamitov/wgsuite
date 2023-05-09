@@ -29,18 +29,21 @@ pub fn reboot(device: &str, config_path: &Path) -> anyhow::Result<()> {
 pub fn add_client(device: &str, config_path: &Path, name: String) -> anyhow::Result<usize> {
     let mut server = Server::load_from_file(config_path)?;
     let id = server.add_client(name)?;
+    let client = server.get_client(id)?;
+    if is_wg_started(device)? {
+        wg_update_with_client(device, WgUpdatedClient::Added(client), &server)?;
+    }
     server.dump_to_file(config_path)?;
-    dump_wg_config(&server, device)?;
-    restart_wg(device)?;
     Ok(id)
 }
 
 pub fn remove_client(device: &str, config_path: &Path, id: usize) -> anyhow::Result<()> {
     let mut server = Server::load_from_file(config_path)?;
-    server.remove_client(id)?;
+    let client = server.remove_client(id)?;
+    if is_wg_started(device)? {
+        wg_update_with_client(device, WgUpdatedClient::Removed(client), &server)?;
+    }
     server.dump_to_file(config_path)?;
-    dump_wg_config(&server, device)?;
-    restart_wg(device)?;
     Ok(())
 }
 
@@ -55,6 +58,18 @@ pub fn list_clients_filter(
 ) -> anyhow::Result<Vec<Client>> {
     let server = Server::load_from_file(config_path)?;
     Ok(server.clients.into_values().filter(predicate).collect())
+}
+
+pub fn get_client(config_path: &Path, id: usize) -> anyhow::Result<Client> {
+    let server = Server::load_from_file(config_path)?;
+    let client = server.get_client(id)?;
+    Ok(client)
+}
+
+pub fn get_client_wg_config(config_path: &Path, id: usize) -> anyhow::Result<String> {
+    let server = Server::load_from_file(config_path)?;
+    let config = server.get_client_wg_config(id)?;
+    Ok(config)
 }
 
 pub fn start_wg(device: &str) -> anyhow::Result<()> {
@@ -96,6 +111,8 @@ fn wg_manage(device: &str, cmd: WgManageCommand) -> anyhow::Result<()> {
             WgManageCommand::Down => "down",
         })
         .arg(device)
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
         .status()?;
 
     if status.success() {
@@ -103,6 +120,55 @@ fn wg_manage(device: &str, cmd: WgManageCommand) -> anyhow::Result<()> {
     } else {
         Err(anyhow!("wg-quick failed with exit code: {}", status))
     }
+}
+
+enum WgUpdatedClient {
+    Added(Client),
+    Removed(Client),
+}
+
+fn wg_update_with_client(
+    device: &str,
+    cmd: WgUpdatedClient,
+    server: &Server,
+) -> anyhow::Result<()> {
+    let status = match cmd {
+        WgUpdatedClient::Added(client) => std::process::Command::new("wg")
+            .arg("set")
+            .arg(device)
+            .arg("peer")
+            .arg(&client.keys.public)
+            .arg("allowed-ips")
+            .arg(format!("{}/32", client.get_ip_address(&server.subnet)))
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .status()?,
+        WgUpdatedClient::Removed(client) => std::process::Command::new("wg")
+            .arg("set")
+            .arg(device)
+            .arg("peer")
+            .arg(&client.keys.public)
+            .arg("remove")
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .status()?,
+    };
+
+    if status.success() {
+        Ok(())
+    } else {
+        Err(anyhow!("wg failed with exit code: {}", status))
+    }
+}
+
+fn is_wg_started(device: &str) -> anyhow::Result<bool> {
+    let status = std::process::Command::new("wg")
+        .arg("show")
+        .arg(device)
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .status()?;
+    Ok(status.success())
 }
 
 fn allow_ip4_forwarding() -> anyhow::Result<()> {

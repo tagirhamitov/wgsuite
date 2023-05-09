@@ -49,9 +49,9 @@ impl Server {
         Ok(id)
     }
 
-    pub fn remove_client(&mut self, id: usize) -> anyhow::Result<()> {
+    pub fn remove_client(&mut self, id: usize) -> anyhow::Result<Client> {
         match self.clients.remove(&id) {
-            Some(_) => Ok(()),
+            Some(client) => Ok(client),
             None => Err(anyhow!("client with id {} doesn't exist", id)),
         }
     }
@@ -105,6 +105,13 @@ impl Server {
             ));
         }
         config
+    }
+
+    pub fn get_client(&self, id: usize) -> anyhow::Result<Client> {
+        match self.clients.get(&id) {
+            Some(client) => Ok(client.clone()),
+            None => Err(anyhow!("client with id {} doesn't exist", id)),
+        }
     }
 
     pub fn get_client_wg_config(&self, id: usize) -> anyhow::Result<String> {
