@@ -22,6 +22,14 @@ pub async fn add_client(
     }
 }
 
+pub async fn remove_client(Path(id): Path<usize>) -> Result<(), (StatusCode, String)> {
+    let cli = Cli::parse();
+    match wglib::actions::remove_client(&cli.device, &cli.config_path, id) {
+        Ok(_) => Ok(()),
+        Err(e) => Err((StatusCode::INTERNAL_SERVER_ERROR, e.to_string())),
+    }
+}
+
 #[derive(Serialize)]
 pub struct Client {
     id: usize,
