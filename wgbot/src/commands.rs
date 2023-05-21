@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use teloxide::prelude::*;
+use teloxide::{prelude::*, types::InputFile};
 
 use crate::check_admin;
 
@@ -69,14 +69,49 @@ impl CommandProcessor {
     }
 
     pub async fn add_client(&self, name: String) -> ResponseResult<()> {
-        match wglib::actions::add_client(&self.device, &self.config_path, name) {
-            Ok(id) => {
-                self.bot
-                    .send_message(self.admin_id, format!("added client with id: {}", id))
-                    .await?;
+        let mut server = match wglib::Server::load_from_file(&self.config_path) {
+            Ok(server) => server,
+            Err(err) => {
+                self.report_to_admin(err).await?;
+                return Ok(());
             }
-            Err(err) => self.report_to_admin(err).await?,
+        };
+
+        let id = match server.add_client(name) {
+            Ok(id) => id,
+            Err(err) => {
+                self.report_to_admin(err).await?;
+                return Ok(());
+            }
+        };
+
+        let conf = match server.get_client_wg_config(id) {
+            Ok(conf) => conf,
+            Err(err) => {
+                self.report_to_admin(err).await?;
+                return Ok(());
+            }
+        };
+
+        match server.dump_to_file(&self.config_path) {
+            Ok(()) => (),
+            Err(err) => {
+                self.report_to_admin(err).await?;
+                return Ok(());
+            }
         }
+
+        self.bot
+            .send_document(
+                self.msg.chat.id,
+                InputFile::memory(conf).file_name("connection.conf"),
+            )
+            .await?;
+
+        self.bot
+            .send_message(self.admin_id, format!("added client with id: {}", id))
+            .await?;
+
         Ok(())
     }
 
